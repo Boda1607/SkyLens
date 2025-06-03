@@ -1,0 +1,20 @@
+{
+  "name": "SkyLens",
+  "short_name": "SkyLens",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#30cfd0",
+  "theme_color": "#330867",
+  "icons": [
+    {
+      "src": "1.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

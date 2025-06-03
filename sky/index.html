@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SkyLens</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#330867" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <!-- iOS meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="apple-touch-icon"  href="1.png" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <style>
+:root {
+  --main-color: #30cfd0;
+  --main-color2: #330867;
+  --card-bg: rgba(255, 255, 255, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to right, var(--main-color), var(--main-color2));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  transition: background 0.5s ease;
+}
+
+.theme-switcher {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.theme-button {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+  padding: 5px;
+  transition: transform 0.2s ease;
+}
+
+.theme-button:hover {
+  transform: scale(1.2);
+}
+
+.theme-list {
+  display: none;
+  position: absolute;
+  right: 0;
+  margin-top: 10px;
+  background: white;
+  padding: 0.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  flex-wrap: wrap;
+  max-width: 200px;
+  gap: 6px;
+  z-index: 100;
+}
+
+.theme-list.show {
+  display: flex;
+}
+
+.theme-color {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.card {
+  width: 90vw;
+  max-width: 600px;
+  height: auto;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transition: background 0.5s ease;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem auto;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+header p {
+  margin: 5px 0 20px;
+  font-size: 1rem;
+}
+
+form {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: nowrap; /* Prevent wrapping */
+  width: 100%;
+  max-width: 90vw; /* Limit total width */
+  margin: 0 auto;
+}
+
+input[type="text"] {
+  flex: 1 1 auto; /* Allow it to shrink and grow */
+  min-width: 0; /* Prevent overflow on small screens */
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(to right, var(--main-color), var(--main-color2));
+  color: white;
+  font-size: 16px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  outline: none;
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+
+input[type="text"]::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+input[type="text"]:focus {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+  background: linear-gradient(to right, var(--main-color2), var(--main-color));
+}
+
+button[type="submit"] {
+  flex-shrink: 0; /* Don't shrink the button */
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(to right, var(--main-color2), var(--main-color));
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(to right, var(--main-color), var(--main-color2));
+}
+
+#map {
+  width: 100%;
+  height: 180px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  margin: 1rem 0;
+}
+
+.weather-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.info-card {
+  flex: 1 1 calc(50% - 16px);
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 16px;
+  transition: background 0.3s;
+  min-width: 140px;
+}
+
+.info-card i {
+  font-size: 20px;
+  color: var(--main-color);
+}
+
+.info-card img {
+  height: 60px;
+  margin: 0 auto;
+}
+
+footer {
+  flex-shrink: 0;
+  text-align: center;
+  color: white;
+  font-size: 1rem;
+  padding: 12px 0;
+  background: transparent;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+}
+
+footer a {
+  color: white;
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+/* Mobile-specific tweaks */
+@media (max-width: 500px) {
+    .card {
+    padding: 1.5rem;
+    }
+
+    header h1 {
+    font-size: 1.5rem;
+    }
+
+    header p {
+    font-size: 0.9rem;
+    }
+
+    .info-card {
+    flex: 1 1 100%;
+    }
+
+    #map {
+    height: 150px;
+    }
+
+    .theme-switcher {
+    position: absolute;
+    top: 40px;
+    right: 33px;
+    z-index: 1000;
+    }
+
+    .input-row {
+    flex-wrap: nowrap;
+    gap: 6px;
+    max-width: 100%;
+    }
+
+    input[type="text"] {
+    font-size: 14px;
+    padding: 8px 10px;
+    }
+
+    button[type="submit"] {
+    font-size: 14px;
+    padding: 8px 10px;
+    white-space: nowrap; /* Prevent the button text from wrapping */
+    }
+}
+
+    </style>
+    </head>
+    <body>
+    <!-- Theme Switcher -->
+    <div class="theme-switcher">
+    <button class="theme-button" onclick="toggleThemeMenu()">
+    <i class="fa-solid fa-palette"></i>
+    </button>
+    <div class="theme-list" id="themeList"></div>
+    </div>
+
+    <div class="card">
+    <header>
+    <h1>SkyLens</h1>
+    <p>Enter a city or select a location on the map</p>
+    </header>
+
+    <form id="cityForm">
+    <input type="text" id="cityInput" placeholder="Enter city (e.g., Cairo)" required />
+    <button type="submit">Get Weather</button>
+    </form>
+
+    <div id="map"></div>
+
+    <div class="weather-info" id="weatherInfo" style="display:none;"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+    Made with ❤️ by <a href="https://abdelrahmanz.netlify.app/" target="_blank">AbdElRahman</a>
+    </footer>
+
+
+
+
+ <script>
+    const API_KEY = '6687247b71c38f87a04682eb77aa2174'; // Replace with your real API key
+    const weatherInfo = document.getElementById('weatherInfo');
+
+    function formatTime(unixTimestamp) {
+        const date = new Date(unixTimestamp * 1000);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function displayWeather(data) {
+        if (!data || data.cod !== 200) {
+        weatherInfo.innerHTML = `<div class="info-card"><i class="fa-solid fa-triangle-exclamation"></i><span>Error: ${data?.message || 'Could not retrieve weather data'}</span></div>`;
+        weatherInfo.style.display = 'flex';
+        return;
+        }
+
+        const iconUrl = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+        weatherInfo.innerHTML = '';
+
+        const weatherData = [
+        { icon: 'fa-map-marker-alt', label: `Weather in ${data.name}, ${data.sys.country}` },
+        { icon: '', image: iconUrl, alt: data.weather[0].description },
+        { icon: 'fa-temperature-three-quarters', label: `Temperature: ${data.main.temp}°C (Feels like ${data.main.feels_like}°C)` },
+        { icon: 'fa-cloud', label: `Condition: ${data.weather[0].description}` },
+        { icon: 'fa-droplet', label: `Humidity: ${data.main.humidity}%` },
+        { icon: 'fa-gauge-high', label: `Pressure: ${data.main.pressure} hPa` },
+        { icon: 'fa-eye', label: `Visibility: ${(data.visibility / 1000).toFixed(1)} km` },
+        { icon: 'fa-wind', label: `Wind Speed: ${data.wind.speed} m/s` },
+        { icon: 'fa-cloud-sun', label: `Cloudiness: ${data.clouds.all}%` },
+        { icon: 'fa-sun', label: `Sunrise: ${formatTime(data.sys.sunrise)}` },
+        { icon: 'fa-moon', label: `Sunset: ${formatTime(data.sys.sunset)}` },
+        { icon: 'fa-location-crosshairs', label: `Coordinates: [${data.coord.lat.toFixed(2)}, ${data.coord.lon.toFixed(2)}]` },
+        ];
+
+        weatherData.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'info-card';
+
+        if (item.image) {
+            card.innerHTML = `<img src="${item.image}" alt="${item.alt}" />`;
+        } else {
+            card.innerHTML = `<i class="fa-solid ${item.icon}"></i><span>${item.label}</span>`;
+        }
+
+        weatherInfo.appendChild(card);
+        });
+
+
+        weatherInfo.style.display = 'flex';
+    }
+
+    function fetchWeatherByCity(city) {
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`;
+        fetch(url)
+        .then(res => res.json())
+        .then(displayWeather)
+        .catch(err => {
+            weatherInfo.innerHTML = `<div class="info-card"><i class="fa-solid fa-bug"></i><span>Error fetching weather: ${err.message}</span></div>`;
+            weatherInfo.style.display = 'flex';
+        });
+    }
+
+    function fetchWeatherByCoords(lat, lon) {
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+        fetch(url)
+        .then(res => res.json())
+        .then(displayWeather)
+        .catch(err => {
+            weatherInfo.innerHTML = `<div class="info-card"><i class="fa-solid fa-bug"></i><span>Error fetching weather: ${err.message}</span></div>`;
+            weatherInfo.style.display = 'flex';
+        });
+    }
+
+    document.getElementById('cityForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const city = document.getElementById('cityInput').value.trim();
+        if (city) {
+        fetchWeatherByCity(city);
+        }
+    });
+
+    // Initialize Leaflet map (requires Leaflet CSS/JS loaded in <head>)
+    const map = L.map('map').setView([30.0444, 31.2357], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker;
+
+    map.on('click', function (e) {
+        const { lat, lng } = e.latlng;
+        if (marker) map.removeLayer(marker);
+        marker = L.marker([lat, lng]).addTo(map);
+        fetchWeatherByCoords(lat, lng);
+    });
+
+    // Optional: Auto-load Cairo's weather on page load
+    window.addEventListener('load', () => fetchWeatherByCity('Cairo'));
+
+
+    const themes = [
+    ['#4facfe', '#00f2fe'],
+    ['#ff9966', '#ff5e62'],
+    ['#4a00e0', '#8e2de2'],
+    ['#7F00FF', '#E100FF'],
+    ['#56CCF2', '#2F80ED'],
+    ['#43e97b', '#38f9d7'],
+    ['#f953c6', '#b91d73'],
+    ['#30cfd0', '#330867'],
+    ['#f7797d', '#FBD786'],
+    ['#00c3ff', '#ffff1c'],
+    ['#3a7bd5', '#3a6073'],
+    ['#FF512F', '#DD2476'],
+    ['#1D976C', '#93F9B9'],
+    ['#ff6a00', '#ee0979'],
+    ['#2193b0', '#6dd5ed'],
+    ['#cc2b5e', '#753a88'],
+
+    // 7 Dark color themes added:
+    ['#232526', '#1c1c1c'],
+    ['#0f2027', '#203a43'],
+    ['#1c1c1c', '#282828'],
+    ['#232526', '#414345'],
+    ['#000000', '#434343'],
+    ['#141e30', '#243b55'],
+    ['#000428', '#004e92']
+    ];
+
+    const themeList = document.getElementById('themeList');
+
+    themes.forEach(([c1, c2]) => {
+      const colorDiv = document.createElement('div');
+      colorDiv.className = 'theme-color';
+      colorDiv.style.background = `linear-gradient(to right, ${c1}, ${c2})`;
+      colorDiv.onclick = () => applyTheme(c1, c2);
+      themeList.appendChild(colorDiv);
+    });
+
+    function toggleThemeMenu() {
+      themeList.classList.toggle('show');
+    }
+
+    function applyTheme(color1, color2) {
+    document.documentElement.style.setProperty('--main-color', color1);
+    document.documentElement.style.setProperty('--main-color2', color2);
+    themeList.classList.remove('show');
+
+    const card = document.querySelector('.card');
+
+    // Darken the colors by 50% (adjust amount as you like)
+    const darkColor1 = darkenHexColor(color1, 0.5);
+    const darkColor2 = darkenHexColor(color2, 0.5);
+
+    card.style.background = `linear-gradient(135deg, ${darkColor1}, ${darkColor2})`;
+
+    // Also style the input background:
+    const input = card.querySelector('input[type="date"]');
+    input.style.background = `linear-gradient(135deg, ${darkColor1}, ${darkColor2})`;
+    input.style.color = 'white'; // For text visibility
+    input.style.border = '1px solid rgba(255,255,255,0.3)';
+
+    // Update the theme-color meta tag to match the main theme color (first gradient color)
+    updateThemeColorMeta(color1);
+    }
+
+    updateThemeColorMeta(getComputedStyle(document.documentElement).getPropertyValue('--main-color').trim());
+
+
+
+
+    function updateThemeColorMeta(color) {
+        let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (!metaThemeColor) {
+            metaThemeColor = document.createElement('meta');
+            metaThemeColor.setAttribute('name', 'theme-color');
+            document.head.appendChild(metaThemeColor);
+        }
+        metaThemeColor.setAttribute('content', color);
+        }
+
+
+
+
+    function hexToRgba(hex, alpha) {
+    let c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c = hex.substring(1).split('');
+        if(c.length === 3){
+        c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return 'rgba(' + [(c>>16) & 255, (c>>8) & 255, c & 255].join(',') + `,${alpha})`;
+    }
+    throw new Error('Bad Hex');
+    }
+
+
+    function darkenHexColor(hex, amount = 0.2) {
+    let c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c = hex.substring(1).split('');
+        if(c.length === 3){
+        c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        let r = Math.floor(((c >> 16) & 255) * (1 - amount));
+        let g = Math.floor(((c >> 8) & 255) * (1 - amount));
+        let b = Math.floor((c & 255) * (1 - amount));
+        return `rgb(${r},${g},${b})`;
+    }
+    throw new Error('Bad Hex');
+    }
+
+
+
+          if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => {
+            console.log('SW registered:', reg.scope);
+            })
+            .catch(err => {
+            console.log('SW registration failed:', err);
+            });
+        });
+    }
+
+
+    const rootStyles = getComputedStyle(document.documentElement);
+    const mainColor2 = rootStyles.getPropertyValue('--main-color2').trim();
+
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', mainColor2);
+
+
+  </script>
+</body>
+</html>
